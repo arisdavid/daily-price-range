@@ -14,11 +14,20 @@ class StockMetrics:
         self._mu, self._sigma = self._calc_metrics()
 
     def _download_historical_price(self):
-        logging.info(
-            f"Downloading historical record for "
-            f"{self.ticker} from {self.from_date} to {self.to_date}"
-        )
-        return yf.download(self.ticker, self.from_date, self.to_date)
+
+        hist_record = yf.download(self.ticker, self.from_date, self.to_date)
+
+        if hist_record.empty:
+            raise Exception(
+                f"Unable to download historical record for ticker {self.ticker} "
+                f"{self.ticker} from {self.from_date} to {self.to_date}"
+            )
+        else:
+            logging.info(
+                f"Downloaded historical record for "
+                f"{self.ticker} from {self.from_date} to {self.to_date}"
+            )
+            return hist_record
 
     def _calc_metrics(self):
 
