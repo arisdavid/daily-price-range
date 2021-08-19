@@ -23,7 +23,6 @@ def run_monte_carlo_simulator(ticker):
 
 if __name__ == "__main__":
     """ Usage: In shell or command line type: python -u execute.py <ticker_symbol>"""
-
     parser = argparse.ArgumentParser("Job Executor")
     parser.add_argument("input_ticker", help="Input Ticker Symbol", type=str)
     _args = parser.parse_args()
