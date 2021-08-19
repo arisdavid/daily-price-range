@@ -1,3 +1,4 @@
+import argparse
 import logging
 import math
 
@@ -41,3 +42,47 @@ def geometric_brownian_motion(
         asset_path *= asset_path > 0
 
     return asset_path.mean(axis=0)
+
+
+def monte_carlo_simulation(
+    num_sims, starting_price, mu, sigma, num_trading_days, forecast_period
+):
+
+    for n_sim in range(num_sims):
+        yield geometric_brownian_motion(
+            starting_price, mu, sigma, num_trading_days, forecast_period
+        )
+
+
+def main():
+
+    parser = argparse.ArgumentParser("Monte Carlo Simulator")
+    parser.add_argument("num_simulations", help="Number of simulations", type=int)
+    parser.add_argument("starting_price", help="Starting value", type=float)
+    parser.add_argument("mu", help="Expected annual return", type=float)
+    parser.add_argument("sigma", help="Expected annual volatility", type=float)
+    parser.add_argument("forecast_period", help="Forecast period in days", type=int)
+    parser.add_argument(
+        "num_trading_days", help="Number of trading days in year", type=int
+    )
+
+    args = parser.parse_args()
+    asset_paths = monte_carlo_simulation(
+        num_sims=args.num_simulations,
+        starting_price=args.starting_price,
+        mu=args.mu,
+        sigma=args.sigma,
+        num_trading_days=args.num_trading_days,
+        forecast_period=args.forecast_period,
+    )
+
+    for asset_path in asset_paths:
+        curve = +asset_path
+
+    logging.info(curve)
+    return curve
+
+
+if __name__ == "__main__":
+
+    _curve = main()

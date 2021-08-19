@@ -1,30 +1,51 @@
 import argparse
 import logging
+import uuid
 
-from quantlib import monte_carlo_simulator
-from quantlib.calc_stock_metric import StockMetrics
+from k8s import Kubernetes
 
 logging.getLogger().setLevel(logging.INFO)
 
 
-def run_monte_carlo_simulator(ticker):
-    num_trading_days = 250
-    forecast_period = 250
+class JobManager(Kubernetes):
+    def __init__(self, ticker):
+        super(JobManager, self).__init__()
+        self.ticker = ticker
 
-    stock = StockMetrics(ticker, "2020-08-19", "2021-08-19")
-    mu = stock.get_mu()
-    sigma = stock.get_sigma()
+    def create_job(self):
+        image = "monte-carlo-simulator:latest"
+        pull_policy = "Never"
+        name = "montecarlosimulator"
 
-    asset_path = monte_carlo_simulator.geometric_brownian_motion(
-        100, mu, sigma, num_trading_days, forecast_period
-    )
-    return asset_path
+        num_sims = "1000"
+        starting_price = "100"
+        mu = "0.2"
+        sigma = "0.2"
+        forecast_period = "250"
+        num_trading_days = "250"
+        args = [num_sims, starting_price, mu, sigma, forecast_period, num_trading_days]
+
+        pod_id = str(f"{self.ticker.lower()}-pod-{uuid.uuid4()}")
+        container = self.make_container(image, name, pull_policy, args)
+        pod_template = self.make_pod_template(pod_id, container)
+
+        job_id = str(f"{self.ticker.lower()}-job-{uuid.uuid4()}")
+        job = self.make_job(job_id, pod_template)
+
+        logging.info(f"Created a job with job-id {job_id}")
+
+        return job
+
+    def execute(self):
+        job = self.create_job()
+        self.batch_api.create_namespaced_job(self._namespace, job)
 
 
 if __name__ == "__main__":
     """ Usage: In shell or command line type: python -u execute.py <ticker_symbol>"""
-    parser = argparse.ArgumentParser("Job Executor")
+    parser = argparse.ArgumentParser("Job Manager")
     parser.add_argument("input_ticker", help="Input Ticker Symbol", type=str)
     _args = parser.parse_args()
-    _asset_path = run_monte_carlo_simulator(_args.input_ticker)
-    logging.info(_asset_path)
+
+    job = JobManager(_args.input_ticker)
+    job.execute()
