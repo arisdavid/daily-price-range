@@ -2,28 +2,44 @@ import argparse
 import logging
 import uuid
 
+from calc_stock_metric import StockMetrics
 from k8s import Kubernetes
 
 logging.getLogger().setLevel(logging.INFO)
 
 
 class JobManager(Kubernetes):
+
+    _num_trading_days = 250
+    _num_sims = 10_000
+
     def __init__(self, ticker):
         super(JobManager, self).__init__()
         self.ticker = ticker
+        stock = StockMetrics(self.ticker, "2020-08-20", "2021-08-20")
+        self.sigma = str(stock.get_sigma())
+        self.mu = str(stock.get_mu())
+        self.starting_price = str(stock.get_close_price())
+
+        # TODO: Remove hard-coding
+        self.forecast_period = "1000"
+        self.num_trading_days = str(self.num_trading_days)
+        self.num_sims = str(self._num_sims)
 
     def create_job(self):
+
         image = "monte-carlo-simulator:latest"
         pull_policy = "Never"
         name = "montecarlosimulator"
 
-        num_sims = "1000"
-        starting_price = "100"
-        mu = "0.2"
-        sigma = "0.2"
-        forecast_period = "250"
-        num_trading_days = "250"
-        args = [num_sims, starting_price, mu, sigma, forecast_period, num_trading_days]
+        args = [
+            self.num_sims,
+            self.starting_price,
+            self.mu,
+            self.sigma,
+            self.forecast_period,
+            self.num_trading_days,
+        ]
 
         pod_id = str(f"{self.ticker.lower()}-pod-{uuid.uuid4()}")
         container = self.make_container(image, name, pull_policy, args)
@@ -42,10 +58,19 @@ class JobManager(Kubernetes):
 
 
 if __name__ == "__main__":
-    """ Usage: In shell or command line type: python -u execute.py <ticker_symbol>"""
+    """ Usage: In shell or command line type: python -u execute.py -l AMZN AAPL MSFT"""
     parser = argparse.ArgumentParser("Job Manager")
-    parser.add_argument("input_ticker", help="Input Ticker Symbol", type=str)
+    parser.add_argument(
+        "-l",
+        "--list",
+        nargs="+",
+        dest="tickers",
+        help="List of ticker symbols",
+        required=True,
+    )
     _args = parser.parse_args()
 
-    job = JobManager(_args.input_ticker)
-    job.execute()
+    for _ticker in _args.tickers:
+        logging.info(f"Processing {_ticker}")
+        _job = JobManager(_ticker)
+        _job.execute()

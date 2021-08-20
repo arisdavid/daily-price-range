@@ -1,4 +1,4 @@
-# Daily Price Range (Mean-Reversion Strategy)
+# Daily Price Range (Mean-Reversion Strategy) - To be completed
 
 ###
 ```execute.py``` will interact with Kubernetes API to launch ephemeral pods to 
@@ -6,7 +6,7 @@ perform monte carlo simulation using ```Geometric Brownian Motion (GBM)``` model
 
 ### Examples
 ```.shell script
-python -u execute.py "AMZN"
+python -u execute.py -l AAPL AMZN MSFT GOOG
 ```
 
 ### Financial Model 

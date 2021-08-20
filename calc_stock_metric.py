@@ -12,6 +12,7 @@ class StockMetrics:
         self.to_date = to_date
         self._hist_price = self._download_historical_price()
         self._mu, self._sigma = self._calc_metrics()
+        self._close_price = self._calc_ohlc()
 
     def _download_historical_price(self):
 
@@ -37,8 +38,14 @@ class StockMetrics:
 
         return mu, sigma
 
+    def _calc_ohlc(self):
+        return self._hist_price["Adj Close"][-1]
+
     def get_mu(self):
         return self._mu
 
     def get_sigma(self):
         return self._sigma
+
+    def get_close_price(self):
+        return self._close_price
