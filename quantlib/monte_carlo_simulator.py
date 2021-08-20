@@ -22,6 +22,7 @@ def init_redis():
         )
         redis_client.ping()
         logging.info("Redis connection ready.")
+
         return redis_client
 
     except Exception:
@@ -77,7 +78,7 @@ def monte_carlo_simulation(
 def main():
 
     parser = argparse.ArgumentParser("Monte Carlo Simulator")
-    parser.add_argument("ticker", help="Ticker symbol")
+    parser.add_argument("ticker", help="Ticker symbol", type=str)
     parser.add_argument("num_simulations", help="Number of simulations", type=int)
     parser.add_argument("starting_price", help="Starting value", type=float)
     parser.add_argument("mu", help="Expected annual return", type=float)
@@ -96,14 +97,17 @@ def main():
         num_trading_days=args.num_trading_days,
         forecast_period=args.forecast_period,
     )
-
+    curve = []
     for asset_path in asset_paths:
         curve = +asset_path
 
     _redis_client = init_redis()
     try:
-        # TODO:
-        _redis_client.set(args.ticker, curve.min())
+        _redis_client.delete(args.ticker)
+        _redis_client.hmset(
+            args.ticker, {"min_price": curve.min(), "max_price": curve.max()}
+        )
+        logging.info(f"Set redis value for key {args.ticker}")
     except Exception:
         logging.exception(f"Unable to cache {args.ticker}")
 
