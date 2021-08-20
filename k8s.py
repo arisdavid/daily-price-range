@@ -1,5 +1,6 @@
 import logging
 
+from decouple import config as get_env
 from kubernetes import client, config
 
 logging.getLogger().setLevel(logging.INFO)
@@ -17,11 +18,19 @@ class Kubernetes:
     @staticmethod
     def make_container(image, name, pull_policy, args):
 
+        redis_host = client.V1EnvVar(name="REDIS_HOST", value=get_env("REDIS_HOST"))
+
+        redis_port = client.V1EnvVar(name="REDIS_PORT", value=get_env("REDIS_PORT"))
+
+        redis_password = client.V1EnvVar(
+            name="REDIS_AUTH_PASS", value=get_env("REDIS_AUTH_PASS")
+        )
+
         container = client.V1Container(
             image=image,
             name=name,
             image_pull_policy=pull_policy,
-            env=[],
+            env=[redis_host, redis_port, redis_password],
             args=args,
             command=["python3", "-u", "/monte_carlo_simulator.py"],
         )
@@ -66,7 +75,7 @@ class Kubernetes:
         job_pods = self.core_api.list_namespaced_pod(
             namespace=self._namespace, label_selector=f"job_name={job.metadata.name}"
         )
-
+        print(job_pods)
         for job_pod in job_pods.items:
             logging.info(f"Deleting pod {job_pod.metadata.name}.")
 

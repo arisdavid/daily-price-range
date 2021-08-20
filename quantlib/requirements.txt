@@ -1,3 +1,5 @@
 kubernetes==18.20.0
 numpy==1.21.2
 yfinance==0.1.63
+python-decouple==3.4
+redis==3.5.3

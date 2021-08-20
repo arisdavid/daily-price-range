@@ -12,6 +12,11 @@ class JobManager(Kubernetes):
 
     _num_trading_days = 250
     _num_sims = 10_000
+    _forecast_period = 250
+
+    _image = "monte-carlo-simulator:latest"
+    _pull_policy = "Never"
+    _name = "montecarlosimulator"
 
     def __init__(self, ticker):
         super(JobManager, self).__init__()
@@ -20,19 +25,17 @@ class JobManager(Kubernetes):
         self.sigma = str(stock.get_sigma())
         self.mu = str(stock.get_mu())
         self.starting_price = str(stock.get_close_price())
-
-        # TODO: Remove hard-coding
-        self.forecast_period = "1000"
-        self.num_trading_days = str(self.num_trading_days)
+        self.forecast_period = str(self._forecast_period)
+        self.num_trading_days = str(self._num_trading_days)
         self.num_sims = str(self._num_sims)
 
     def create_job(self):
-
-        image = "monte-carlo-simulator:latest"
-        pull_policy = "Never"
-        name = "montecarlosimulator"
+        image = self._image
+        name = self._name
+        pull_policy = self._pull_policy
 
         args = [
+            self.ticker,
             self.num_sims,
             self.starting_price,
             self.mu,
@@ -41,11 +44,9 @@ class JobManager(Kubernetes):
             self.num_trading_days,
         ]
 
-        pod_id = str(f"{self.ticker.lower()}-pod-{uuid.uuid4()}")
+        job_id = str(f"{self.ticker.lower()}-{uuid.uuid4()}")
         container = self.make_container(image, name, pull_policy, args)
-        pod_template = self.make_pod_template(pod_id, container)
-
-        job_id = str(f"{self.ticker.lower()}-job-{uuid.uuid4()}")
+        pod_template = self.make_pod_template(job_id, container)
         job = self.make_job(job_id, pod_template)
 
         logging.info(f"Created a job with job-id {job_id}")

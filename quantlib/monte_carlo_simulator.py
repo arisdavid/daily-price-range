@@ -4,8 +4,28 @@ import math
 
 import numpy as np
 import numpy.matlib as ml
+import redis
+from decouple import config
 
 logging.basicConfig(level=logging.INFO)
+
+
+def init_redis():
+    try:
+
+        redis_host = config("REDIS_HOST")
+        redis_port = config("REDIS_PORT")
+        auth_pass = config("REDIS_AUTH_PASS")
+
+        redis_client = redis.StrictRedis(
+            host=redis_host, port=redis_port, password=auth_pass
+        )
+        redis_client.ping()
+        logging.info("Redis connection ready.")
+        return redis_client
+
+    except Exception:
+        logging.exception("Redis Cache not available")
 
 
 def geometric_brownian_motion(
@@ -41,7 +61,7 @@ def geometric_brownian_motion(
     if allow_negative:
         asset_path *= asset_path > 0
 
-    return asset_path.mean(axis=0)
+    return asset_path
 
 
 def monte_carlo_simulation(
@@ -57,6 +77,7 @@ def monte_carlo_simulation(
 def main():
 
     parser = argparse.ArgumentParser("Monte Carlo Simulator")
+    parser.add_argument("ticker", help="Ticker symbol")
     parser.add_argument("num_simulations", help="Number of simulations", type=int)
     parser.add_argument("starting_price", help="Starting value", type=float)
     parser.add_argument("mu", help="Expected annual return", type=float)
@@ -79,7 +100,13 @@ def main():
     for asset_path in asset_paths:
         curve = +asset_path
 
-    logging.info(curve)
+    _redis_client = init_redis()
+    try:
+        # TODO:
+        _redis_client.set(args.ticker, curve.min())
+    except Exception:
+        logging.exception(f"Unable to cache {args.ticker}")
+
     return curve
 
 
