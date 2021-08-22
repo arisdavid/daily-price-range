@@ -1,0 +1,83 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: taskworker
+  name: taskworker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: taskworker
+  template:
+    metadata:
+      labels:
+        app: taskworker
+    spec:
+      serviceAccountName: taskmanager-sa
+      containers:
+      - image: task-worker:latest
+        name: taskworker
+        imagePullPolicy: Never
+        command: ["python3", "-u", "task_worker.py"]
+        env:
+          - name: RMQ_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: rmq-creds
+                key: RMQ_USERNAME
+          - name: RMQ_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: rmq-creds
+                key: RMQ_PASSWORD
+          - name: REDIS_AUTH_PASS
+            valueFrom:
+              secretKeyRef:
+                name: rmq-creds
+                key: REDIS_AUTH_PASS
+          - name: RMQ_HOST
+            value: "rabbitmq-trading"
+          - name: RMQ_PORT
+            value: "5672"
+          - name: REDIS_HOST
+            value: "redis-trading-master"
+          - name: REDIS_PORT
+            value: "6379"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: tasksender
+  name: tasksender
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tasksender
+  template:
+    metadata:
+      labels:
+        app: tasksender
+    spec:
+      containers:
+      - image: task-sender:latest
+        name: tasksender
+        imagePullPolicy: Never
+        command: ["sh", "-c", "sleep infinity"]
+        env:
+          - name: RMQ_USERNAME
+            valueFrom:
+              secretKeyRef:
+                name: rmq-creds
+                key: RMQ_USERNAME
+          - name: RMQ_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: rmq-creds
+                key: RMQ_PASSWORD
+          - name: RMQ_HOST
+            value: "rabbitmq-trading"
+          - name: RMQ_PORT
+            value: "5672"

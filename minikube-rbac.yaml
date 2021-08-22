@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: trading
+  name: crud-rbac
+rules:
+- apiGroups: ["*"]
+  resources: ["*"]
+  verbs: ["*"]
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  creationTimestamp: null
+  name: taskmanager-sa
+  namespace: trading
+
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: taskmanager-sa-rbac-binding
+  namespace: trading
+subjects:
+- kind: ServiceAccount
+  name: taskmanager-sa
+  apiGroup: ""
+roleRef:
+  kind: Role
+  name: crud-rbac
+  apiGroup: ""

@@ -103,9 +103,16 @@ def main():
 
     _redis_client = init_redis()
     try:
+        # TODO: Check if key exists. Update if exists. Create if not exist.
         _redis_client.delete(args.ticker)
         _redis_client.hmset(
-            args.ticker, {"min_price": curve.min(), "max_price": curve.max()}
+            args.ticker,
+            {
+                "min_price": curve.min(),
+                "max_price": curve.max(),
+                "mu": args.mu,
+                "sigma": args.sigma,
+            },
         )
         logging.info(f"Set redis value for key {args.ticker}")
     except Exception:

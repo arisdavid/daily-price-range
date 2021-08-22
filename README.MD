@@ -1,10 +1,11 @@
-# Daily Price Range (Mean-Reversion Strategy)
+# Daily Price Range (Mean-Reversion Day Trading Strategy)
 
 Work In Progress.
 
 ### Introduction
-```execute.py``` will interact with Kubernetes API to launch ephemeral pods to 
-perform monte carlo simulation using ```Geometric Brownian Motion (GBM)``` model to predict the stock's "expected" range - lower and upper bounds.
+Python app that interacts with Kubernetes API to launch ephemeral jobs to 
+perform monte carlo simulation using ```Geometric Brownian Motion (GBM)``` 
+model to forecast the stock's "expected" range - lower and upper bounds.
 
 It will cache the results in Redis. 
 
@@ -13,19 +14,18 @@ It will cache the results in Redis.
 2. ``` make dev-configure ```
 3. ``` make build ``` . If using minikube as k8s cluster make sure to run ``` eval $(minikube docker-env) ``` before building the docker file
     
-4. ``` make install-redis ```
+4. Install Redis, RabbitMQ and the producer and consumer ``` make install ```
 
 #### Example
-One stock
+Insider the Kubernetes Cluster (Using RabbitMQ to send task and launch workers)
 ```.shell script
-python -u execute.py -l AAPL
+kubectl exec <task_sender_pod_name>-n trading -- sh -c "python3 -u task_sender.py -l AAPL AMZN CRWD UPST"
 ```
 
-Multiple stocks
+Outside the Kubernetes Cluster
 ```.shell script
-python -u execute.py -l AAPL AMZN MSFT GOOG CRWD UPST HOOD
+python -u execute.py -l AAPL AMZN CRWD UPST 
 ```
-
 
 ---
 ### Geometric Brownian Motion

@@ -1,12 +1,15 @@
-import argparse
 import logging
+import os
 import uuid
 from datetime import date, timedelta
 
-from taskworker.calc_stock_metric import StockMetrics
-from taskworker.k8s import Kubernetes
+import pika
+from calc_stock_metric import StockMetrics
+from decouple import config
+from k8s import Kubernetes
 
-logging.getLogger().setLevel(logging.INFO)
+logging.basicConfig(level=logging.INFO)
+logging.getLogger("pika").setLevel(logging.WARNING)
 
 
 class JobManager(Kubernetes):
@@ -65,20 +68,28 @@ class JobManager(Kubernetes):
         self.batch_api.create_namespaced_job(self._namespace, job)
 
 
-if __name__ == "__main__":
-    """ Usage: In shell or command line type: python -u execute.py -l AMZN AAPL MSFT"""
-    parser = argparse.ArgumentParser("Job Manager")
-    parser.add_argument(
-        "-l",
-        "--list",
-        nargs="+",
-        dest="tickers",
-        help="List of ticker symbols",
-        required=True,
+def read_message():
+    credentials = pika.PlainCredentials(config("RMQ_USERNAME"), config("RMQ_PASSWORD"))
+    conn = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=config("RMQ_HOST"), port=config("RMQ_PORT"), credentials=credentials,
+        )
     )
-    _args = parser.parse_args()
+    channel = conn.channel()
+    channel.queue_declare(queue="trading-queue", durable=True)
 
-    for _ticker in _args.tickers:
-        logging.info(f"Processing {_ticker}")
-        _job = JobManager(_ticker)
-        _job.execute()
+    def message_callback(ch, method, properties, body):
+        logging.info(f"Performing quantitative analysis on {body}")
+        job = JobManager(body.decode("utf-8"))
+        job.execute()
+        ch.basic_ack(delivery_tag=method.delivery_tag)
+
+    channel.basic_qos(prefetch_count=1)
+    channel.basic_consume(queue="trading-queue", on_message_callback=message_callback)
+    channel.start_consuming()
+    conn.close()
+
+
+if __name__ == "__main__":
+    logging.info(os.environ)
+    read_message()
