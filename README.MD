@@ -2,6 +2,9 @@
 
 Work In Progress.
 
+### Current Architecture
+![Image of GBM](https://github.com/arisdavid/daily-price-range/blob/master/documentation/img/architecture.png)
+
 ### Introduction
 Python app that interacts with Kubernetes API to launch ephemeral jobs to 
 perform monte carlo simulation using ```Geometric Brownian Motion (GBM)``` 
