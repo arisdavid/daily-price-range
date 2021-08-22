@@ -2,9 +2,6 @@
 
 Work In Progress.
 
-### Current Architecture
-![Image of GBM](https://github.com/arisdavid/daily-price-range/blob/master/documentation/img/architecture.png)
-
 ### Introduction
 Python app that interacts with Kubernetes API to launch ephemeral jobs to 
 perform monte carlo simulation using ```Geometric Brownian Motion (GBM)``` 
@@ -12,6 +9,10 @@ model to forecast the stock's "expected" range - lower and upper bounds.
 
 It will cache the results in Redis. 
 
+### Current Architecture
+![Image of GBM](https://github.com/arisdavid/daily-price-range/blob/master/documentation/img/architecture.png)
+
+## How to install and run 
 ### Prerequisites
 1. Create a virtual environment to install python packages from requirement.txt
 2. ``` make dev-configure ```
